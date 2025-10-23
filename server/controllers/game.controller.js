@@ -11,6 +11,11 @@ const joinGame = async (req, res) => {
 
     const gameData = playersDb.getGameData();
     emitEvent("userJoined", gameData);
+    
+    // Notificar a results-screen sobre nuevo jugador
+    emitEvent("playerConnected", {
+      players: playersDb.getAllPlayersWithScores()
+    });
 
     res.status(200).json({ success: true, players: gameData.players });
   } catch (err) {
@@ -81,22 +86,80 @@ const selectPolo = async (req, res) => {
     const poloSelected = playersDb.findPlayerById(poloId);
     const allPlayers = playersDb.getAllPlayers();
 
+    let message = "";
+    
+    // SISTEMA DE PUNTUACIÓN
     if (poloSelected.role === "polo-especial") {
-      // Notify all players that the game is over
-      allPlayers.forEach((player) => {
-        emitToSpecificClient(player.id, "notifyGameOver", {
-          message: `El marco ${myUser.nickname} ha ganado, ${poloSelected.nickname} ha sido capturado`,
-        });
-      });
+      // Marco atrapa polo especial: +50 puntos para Marco
+      playersDb.updatePlayerScore(socketId, 50);
+      // Polo especial es atrapado: -10 puntos
+      playersDb.updatePlayerScore(poloId, -10);
+      
+      message = `El marco ${myUser.nickname} ha ganado, ${poloSelected.nickname} ha sido capturado (+50 puntos para ${myUser.nickname})`;
     } else {
-      allPlayers.forEach((player) => {
-        emitToSpecificClient(player.id, "notifyGameOver", {
-          message: `El marco ${myUser.nickname} ha perdido`,
-        });
+      // Marco no atrapa polo especial: -10 puntos para Marco
+      playersDb.updatePlayerScore(socketId, -10);
+      // Polo normal no es atrapado: +10 puntos
+      playersDb.updatePlayerScore(poloId, 10);
+      
+      message = `El marco ${myUser.nickname} ha perdido (-10 puntos)`;
+    }
+
+    // Notificar a todos los jugadores
+    allPlayers.forEach((player) => {
+      emitToSpecificClient(player.id, "notifyGameOver", {
+        message: message,
+        nickname: myUser.nickname
+      });
+      
+      // Enviar puntuación actualizada a cada jugador
+      const currentScore = playersDb.getPlayerScore(player.id);
+      emitToSpecificClient(player.id, "updateScore", {
+        score: currentScore
+      });
+    });
+
+    // Notificar a results-screen sobre actualización de puntuaciones
+    emitEvent("scoresUpdated", {
+      players: playersDb.getAllPlayersWithScores()
+    });
+
+    // Verificar si hay ganador
+    if (playersDb.hasWinner()) {
+      const winner = playersDb.getWinner();
+      emitEvent("gameWon", {
+        winner: winner,
+        players: playersDb.getAllPlayersWithScores()
       });
     }
 
     res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// NUEVO: Endpoint para reiniciar puntuaciones
+const resetScores = async (req, res) => {
+  try {
+    playersDb.resetAllScores();
+    
+    // Notificar a todos los clientes
+    emitEvent("scoresReset", {
+      players: playersDb.getAllPlayersWithScores()
+    });
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// NUEVO: Endpoint para obtener puntuaciones
+const getScores = async (req, res) => {
+  try {
+    const playersWithScores = playersDb.getAllPlayersWithScores();
+    res.status(200).json({ players: playersWithScores });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -108,4 +171,6 @@ module.exports = {
   notifyMarco,
   notifyPolo,
   selectPolo,
+  resetScores,
+  getScores
 };

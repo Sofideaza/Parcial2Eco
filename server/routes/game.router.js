@@ -9,4 +9,8 @@ router.post('/marco', gameController.notifyMarco);
 router.post('/polo', gameController.notifyPolo);
 router.post('/select-polo', gameController.selectPolo);
 
+// Nuevas rutas para puntuación
+router.post('/reset-scores', gameController.resetScores);
+router.get('/scores', gameController.getScores);
+
 module.exports = router;
