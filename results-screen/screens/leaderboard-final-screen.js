@@ -5,22 +5,25 @@ export default function renderScreen2(data) {
   
   const app = document.getElementById("app");
   app.innerHTML = `
-    <div id="screen2">
-      <h2>🎉 ¡Tenemos un Ganador! 🎉</h2>
-      <div id="winner-info">
-        <h3>🏆 ${winner.nickname} ha ganado con ${winner.score} puntos! 🏆</h3>
+    <div class="final-container">
+      <h1 class="monitor-title"> ¡TENEMOS UN GANADOR! </h1>
+      
+      <div class="winner-info">
+        <h2>GANADOR</h2>
+        <h3 class="winner-name">${winner.nickname}</h3>
+        <p>con <strong>${winner.score} puntos</strong></p>
       </div>
       
-      <div id="players-ranking">
-        <h3>Ranking Final:</h3>
+      <div class="players-section">
+        <h2>Ranking Final</h2>
         <div id="ranking-list"></div>
       </div>
       
-      <div id="controls">
-        <button id="sort-score-btn">Ordenar por Puntuación</button>
-        <button id="sort-name-btn">Ordenar Alfabéticamente</button>
-        <button id="restart-game-btn">🔄 Reiniciar Juego</button>
-        <button id="back-btn">← Volver al Tablero</button>
+      <div class="controls-panel">
+        <button id="sort-score-btn" class="control-btn">Ordenar por Puntuación</button>
+        <button id="sort-name-btn" class="control-btn">Ordenar Alfabéticamente</button>
+        <button id="restart-game-btn" class="control-btn">🔄 Reiniciar Juego</button>
+        <button id="back-btn" class="control-btn">← Volver al Tablero</button>
       </div>
     </div>
   `;
@@ -34,69 +37,67 @@ export default function renderScreen2(data) {
   let currentPlayers = [...players];
   let sortByScore = true;
 
-  // Mostrar ranking inicial (ordenado por puntuación)
   updateRanking(currentPlayers, true);
 
-  // Botón para ordenar por puntuación
   sortScoreBtn.addEventListener("click", () => {
     sortByScore = true;
     updateRanking(currentPlayers, true);
   });
 
-  // Botón para ordenar alfabéticamente
   sortNameBtn.addEventListener("click", () => {
     sortByScore = false;
     updateRanking(currentPlayers, false);
   });
 
-  // Botón para reiniciar juego
   restartBtn.addEventListener("click", async () => {
     await makeRequest("/api/game/reset-scores", "POST");
     navigateTo("/");
   });
 
-  // Botón para volver al tablero
   backBtn.addEventListener("click", () => {
     navigateTo("/");
   });
 
-  // Función para actualizar el ranking
   function updateRanking(playersList, byScore) {
     const sortedPlayers = byScore 
       ? [...playersList].sort((a, b) => (b.score || 0) - (a.score || 0))
       : [...playersList].sort((a, b) => a.nickname.localeCompare(b.nickname));
 
     rankingList.innerHTML = `
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-        <thead>
-          <tr style="background: rgba(102, 126, 234, 0.3);">
-            <th style="padding: 10px; text-align: left;">Posición</th>
-            <th style="padding: 10px; text-align: left;">Jugador</th>
-            <th style="padding: 10px; text-align: center;">Puntuación</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${sortedPlayers.map((player, index) => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); ${player.id === winner.id ? 'background: rgba(0,255,0,0.1);' : ''}">
-              <td style="padding: 10px;">${byScore ? index + 1 : '-'}</td>
-              <td style="padding: 10px; ${player.id === winner.id ? 'font-weight: bold; color: #00ff00;' : ''}">
-                ${player.nickname} ${player.id === winner.id ? '👑' : ''}
-              </td>
-              <td style="padding: 10px; text-align: center; font-weight: bold; color: ${getScoreColor(player.score)};">
-                ${player.score || 0}
-              </td>
+      <div style="overflow-x: auto;">
+        <table class="players-table">
+          <thead>
+            <tr>
+              <th>POSICIÓN</th>
+              <th>JUGADOR</th>
+              <th>PUNTUACIÓN</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${sortedPlayers.map((player, index) => `
+              <tr ${player.id === winner.id ? 'class="winner-row"' : ''}>
+                <td class="position-cell">
+                  ${byScore ? index + 1 : '-'}
+                </td>
+                <td class="player-name">
+                  ${player.nickname} ${player.id === winner.id ? '<span class="winner-crown">👑</span>' : ''}
+                </td>
+                <td class="score-cell ${getScoreClass(player.score)}">
+                  ${player.score || 0}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
     `;
   }
 
-  // Función para obtener color según puntuación
-  function getScoreColor(score) {
-    if (score >= 100) return "#00ff00";
-    if (score >= 50) return "#ffff00";
-    if (score < 0) return "#ff4444";
-    return "#ffffff";
+  function getScoreClass(score) {
+    if (score >= 100) return "score-positive-high";
+    if (score >= 50) return "score-positive-medium";
+    if (score >= 20) return "score-positive-low";
+    if (score < 0) return "score-negative";
+    return "score-neutral";
   }
 }

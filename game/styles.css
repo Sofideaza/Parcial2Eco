@@ -95,6 +95,17 @@ h2 {
   z-index: 1;
 }
 
+h3 {
+  font-size: 1.5rem;
+  text-align: center;
+  margin: 0.5rem 0;
+  animation: fadeInSlide 1.2s ease-out;
+  color: #f0f0f0;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
 p {
   animation: fadeInSlide 1.5s ease-out;
 }
@@ -266,6 +277,29 @@ button:active {
 #pool-players p {
   margin: 0px;
   color: #d0d0d0;
+}
+
+/* Score Display */
+.score-display {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin: 10px 0;
+  padding: 10px 20px;
+  background: rgba(102, 126, 234, 0.2);
+  border-radius: 10px;
+  border: 1px solid rgba(102, 126, 234, 0.5);
+}
+
+.score-positive {
+  color: #00ff00;
+}
+
+.score-negative {
+  color: #ff4444;
+}
+
+.score-neutral {
+  color: #ffffff;
 }
 
 @keyframes fadeIn {

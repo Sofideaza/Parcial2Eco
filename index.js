@@ -5,6 +5,7 @@ const { createServer } = require("http");
 const playersRouter = require("./server/routes/players.router");
 const gameRouter = require("./server/routes/game.router");
 const { initSocketInstance } = require("./server/services/socket.service");
+const playersDb = require("./server/db/players.db");
 
 const PORT = 5050;
 
@@ -20,9 +21,24 @@ app.use("/results", express.static(path.join(__dirname, "results-screen")));
 app.use("/api", playersRouter);
 app.use("/api/game", gameRouter);
 
-// Services
-initSocketInstance(httpServer);
+const io = initSocketInstance(httpServer);
 
-httpServer.listen(PORT, () =>
-  console.log(`Server running at http://localhost:${PORT}`)
-);
+io.on('connection', (socket) => {
+  console.log('Usuario conectado:', socket.id);
+
+  socket.on('getInitialData', () => {
+    const playersWithScores = playersDb.getAllPlayersWithScores();
+    socket.emit('initialData', { players: playersWithScores });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Usuario desconectado:', socket.id);
+  });
+});
+
+httpServer.listen(PORT, () =>{
+  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+   console.log(`   ➤ http://localhost:${PORT}/game`);
+   console.log(`   ➤ http://localhost:${PORT}/results`);
+
+});

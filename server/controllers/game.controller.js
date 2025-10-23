@@ -1,7 +1,7 @@
 const playersDb = require("../db/players.db");
 const {
   emitEvent,
-  emitToSpecificClient,
+  emitToSpecificClient
 } = require("../services/socket.service");
 
 const joinGame = async (req, res) => {
@@ -13,9 +13,12 @@ const joinGame = async (req, res) => {
     emitEvent("userJoined", gameData);
     
     // Notificar a results-screen sobre nuevo jugador
+    const playersWithScores = playersDb.getAllPlayersWithScores();
     emitEvent("playerConnected", {
-      players: playersDb.getAllPlayersWithScores()
+      players: playersWithScores
     });
+
+    console.log(`Jugador ${nickname} conectado. Total: ${playersWithScores.length}`);
 
     res.status(200).json({ success: true, players: gameData.players });
   } catch (err) {
@@ -120,17 +123,21 @@ const selectPolo = async (req, res) => {
     });
 
     // Notificar a results-screen sobre actualización de puntuaciones
+    const playersWithScores = playersDb.getAllPlayersWithScores();
     emitEvent("scoresUpdated", {
-      players: playersDb.getAllPlayersWithScores()
+      players: playersWithScores
     });
+
+    console.log(`Puntuaciones actualizadas:`, playersWithScores);
 
     // Verificar si hay ganador
     if (playersDb.hasWinner()) {
       const winner = playersDb.getWinner();
       emitEvent("gameWon", {
         winner: winner,
-        players: playersDb.getAllPlayersWithScores()
+        players: playersWithScores
       });
+      console.log(`🎉 ${winner.nickname} ha ganado con ${winner.score} puntos!`);
     }
 
     res.status(200).json({ success: true });
@@ -145,9 +152,12 @@ const resetScores = async (req, res) => {
     playersDb.resetAllScores();
     
     // Notificar a todos los clientes
+    const playersWithScores = playersDb.getAllPlayersWithScores();
     emitEvent("scoresReset", {
-      players: playersDb.getAllPlayersWithScores()
+      players: playersWithScores
     });
+
+    console.log("Puntuaciones reiniciadas");
 
     res.status(200).json({ success: true });
   } catch (err) {

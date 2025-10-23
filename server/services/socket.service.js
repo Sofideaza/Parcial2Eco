@@ -9,18 +9,21 @@ const initSocketInstance = (httpServer) => {
       origin: "*",
     },
   });
+  return io;
 };
 
 const emitToSpecificClient = (socketId, eventName, data) => {
   if (!io) {
-    throw new Error("Socket.io instance is not initialized");
+    console.error("Socket.io instance is not initialized");
+    return;
   }
   io.to(socketId).emit(eventName, data);
 };
 
 const emitEvent = (eventName, data) => {
   if (!io) {
-    throw new Error("Socket.io instance is not initialized");
+    console.error("Socket.io instance is not initialized");
+    return;
   }
   io.emit(eventName, data);
 };
@@ -28,5 +31,5 @@ const emitEvent = (eventName, data) => {
 module.exports = {
   emitEvent,
   initSocketInstance,
-  emitToSpecificClient,
+  emitToSpecificClient
 };
